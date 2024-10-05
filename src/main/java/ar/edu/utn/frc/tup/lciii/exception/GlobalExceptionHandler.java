@@ -6,11 +6,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ErrorApi> handleCustomException(CustomException e) {
+        ErrorApi error = buildError(e.getMessage(), e.getStatus());
+        return ResponseEntity.status(e.getStatus()).body(error);
+    }
     @ExceptionHandler(CountryNotFoundException.class)
     public ResponseEntity<ErrorApi> handleCountryNotFoundException(CountryNotFoundException ex) {
         ErrorApi errorApi = ErrorApi.builder()
@@ -31,5 +37,13 @@ public class GlobalExceptionHandler {
                 .message("An unexpected error occurred")
                 .build();
         return new ResponseEntity<>(errorApi, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    private ErrorApi buildError(String message, HttpStatus status) {
+        return ErrorApi.builder()
+                .timestamp(String.valueOf(Timestamp.from(ZonedDateTime.now().toInstant())))
+                .error(status.getReasonPhrase())
+                .status(status.value())
+                .message(message)
+                .build();
     }
 }
